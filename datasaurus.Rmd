@@ -1,7 +1,7 @@
 ---
 title: "datasaurus"
 author: "Aurélien Ginolhac"
-date: "7/4/2017"
+date: "5/7/2017"
 output:
   unilur::tutorial_html_solution:
     collapse: TRUE
@@ -53,13 +53,25 @@ datasaurus_dozen %>%
 - what are the dimensions of this dataset? Rows and columns?
 
 ```{r, solution = TRUE}
+# dim() returns the dimensions of the data frame, i.e number of rows and columns
 dim(datasaurus_dozen)
+# ncol() only number of columns
 ncol(datasaurus_dozen)
+# nrow() only number of rows
 nrow(datasaurus_dozen)
 ```
 
+- assign the `datasaurus_dozen` to the `datasaurus_dozen` object. This aims at populating the **Global Environment**
+
+```{r, solution = TRUE}
+datasaurus_dozen <- datasaurus_dozen
+```
+
+
+- using Rstudio, those dimensions are now also reported within the interface, where?
+
 ```{asis, solution = TRUE}
-see also the Environment panel -> Global Environment
+in the Environment panel -> Global Environment
 ```
 
 ### How many datasets are present?
@@ -76,9 +88,20 @@ unique(datasaurus_dozen$dataset) %>% length()
 
 ### Check summary statistics per dataset
 
-### the mean of the `x` & `y` column
+- compute the mean of the `x` & `y` column. For this, you need to `group_by()` the appropriate column and then `summarise()`
 
-```{r, solution = TRUE}
+```{asis,  boxtitle = "Tip", box = "lightblue"}
+In `summarise()` you can define as many new columns as you wish. No need to call it for every single variable.
+```
+
+```{r, eval = FALSE, solution = TRUE}
+datasaurus_dozen %>%
+  group_by(dataset) %>%
+  summarise(mean_x = mean(x),
+            mean_y = mean(y))
+```
+
+```{r, echo = FALSE, solution = TRUE}
 datasaurus_dozen %>%
   group_by(dataset) %>%
   summarise(mean_x = mean(x),
@@ -87,9 +110,16 @@ datasaurus_dozen %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
 ```
 
-### the standard deviation of the `x` & `y` column
+- compute the standard deviation of the `x` & `y` column in a same way
 
-```{r, solution = TRUE}
+```{r, eval = FALSE, solution = TRUE}
+datasaurus_dozen %>%
+  group_by(dataset) %>%
+  summarise(sd_x = sd(x),
+            sd_y = sd(y))
+
+```
+```{r, echo = FALSE, solution = TRUE}
 datasaurus_dozen %>%
   group_by(dataset) %>%
   summarise(sd_x = sd(x),
@@ -98,10 +128,14 @@ datasaurus_dozen %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
 ```
 
+- bonus: do then all in one go using `summarise_if` so we exclude the `dataset` column and compute the others
 
-#### bonus: all in one go using `summarise_if` so we exclude the `dataset` column and compute the others
-
-```{r, solution = TRUE}
+```{r, eval = FALSE, solution = TRUE}
+datasaurus_dozen %>%
+  group_by(dataset) %>%
+  summarise_if(is.double, funs(mean = mean, sd = sd))
+```
+```{r, echo = FALSE, solution = TRUE}
 datasaurus_dozen %>%
   group_by(dataset) %>%
   summarise_if(is.double, funs(mean = mean, sd = sd)) %>%
@@ -164,7 +198,7 @@ no ;) We were fooled by the summary stats
 
 ### Animation 
 
--install the `gganimate` package
+- install the `gganimate` package, its dependencies will be automatically installed.
 ```{r, eval = FALSE, solution = TRUE}
 install.packages("gganimate")
 ```
