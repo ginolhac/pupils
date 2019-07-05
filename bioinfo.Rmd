@@ -1,0 +1,278 @@
+---
+title: "Bioinformatic and Biostatistic"
+subtitle: "Life Sciences Research Unit"
+author: "Aurélien Ginolhac"
+date: "2019-07-04"
+output:
+  iosp::ioslides_plus:
+    keep_md: no
+    logo: ./img/uni.png
+    footer: "[bioinfo core](http://wwwen.uni.lu/recherche/fstc/life_sciences_research_unit/core_positions/bioinformatics)"
+    smaller: yes
+    widescreen: yes
+    self_contained: false
+    box_colours:
+      bg-question: [bg: "white", header_bg: "springgreen4", header_text: "#FFD700"]
+      bg-uni: [bg: "grey95", header_bg: "#5a9fceff", header_text: "#bc3330ff"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggsignif)
+library(survminer)
+library(survival)
+library(here) # devtools::install_github("krlmlr/here") 
+```
+
+```{css, echo = FALSE}
+/* 
+  to add negative vertical space (push content up)
+  should be cleaned/fixed/enhanced in iosp...
+  to be used for example to push a full slide screenshot close to the header (nvs1 or nvs2)
+  https://gist.github.com/koncina/1c89e615654f123e879802e50291a0f6
+*/
+
+article.nvs1 {
+  margin-top: -1em !important;
+}
+
+article.nvs2 {
+  margin-top: -2em !important;
+}
+
+article.nvs3 {
+  margin-top: -3em !important;
+}
+
+/* positive vertical space */
+
+.vs1 {
+  margin-top: 1em !important;
+}
+
+.vs2 {
+  margin-top: 2em !important;
+}
+
+.vs3 {
+  margin-top: 3em !important;
+}
+
+.center-pic img {
+  display: block;
+  margin: auto;
+  margin-top: 5px;
+  margin-bottom:5px;
+}
+
+.small-pic img {
+  max-height: 100px;
+}
+
+.icon img {
+  float: right;
+  margin-left: 20px;
+}
+```
+
+
+## Bioinformatic core position | activities {.build .vs1}
+
+
+### Bioinformatics {.box-4 .bg-red .show}
+
+- Next Generation Sequencing
+    + QC
+    + mapping
+    + peak calling
+    + CNV detection
+- Microarray
+- Functional enrichments
+
+### Biostatistics / R {.box-4 .bg-green .stretch}
+
+- which tests?
+- Differential expression
+- Unsupervised learning
+- Survival analyses
+- Data visualisation
+
+### IT {.box-4 .bg-yellow .stretch}
+
+- software licences
+    + Graphpad (with LCSB)
+    + EndNote
+- High Performance Computer (gaia)
+- set-up (mac)
+
+
+### Teaching {.box-6 .bg-white .stretch}
+
+- ChIP-seq, doctoral school
+- HPC summer school, doctoral school
+
+
+### Teaching {.box-6 .bg-white}
+
+- BASV 5<sup>th</sup> semester
+- _R_ workshop, now in doctoral school
+
+
+## Bioinformatics | Next-Generation Sequencing {.center-pic .nvs1}
+
+```{r, echo = FALSE, out.width = "110%"}
+knitr::include_graphics(here("img/bioinfo_ngs.png"))
+```
+
+
+## Biostatistics {.nvs1}
+
+
+### {.box-6}
+
+```{r, echo = FALSE, fig.height = 4.5}
+ggplot(iris, aes(x = Species, y = Sepal.Length)) + 
+  geom_boxplot(size = 0.8) +
+  ggbeeswarm::geom_quasirandom(size = 2, alpha = 0.6, colour = "grey60") +
+  geom_signif(comparisons = list(c("setosa", "virginica")),
+              map_signif_level = c("****" = 0.0001, "***" = 0.001, "**" = 0.01,  "*" = 0.05)) +
+  theme_minimal(20) +
+  labs(title = "Comparison",
+       x = NULL,
+       y = "Sepal length")
+```
+
+### {.box-6}
+
+```{r, echo = FALSE}
+library(FactoMineR)
+pca    <- prcomp(iris[, 1:4], retx = TRUE, scale. = TRUE) # scaled pca [exclude species col]
+pca_iris <- PCA(iris[, 1:4], graph = FALSE)
+var_iris <- pca_iris$var$coord %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "var") %>%
+  separate(var, into = c("flower", "measure"), sep = "\\.") %>%
+  as_tibble()
+scores <- pca$x[, 1:3]                        # scores for first three PC's
+# k-means clustering [assume 3 clusters]
+km     <- kmeans(scores, centers = 3, nstart = 5)
+ggdata <- data.frame(scores, Cluster = km$cluster, Species = iris$Species)
+# get some custom colors
+my_col_var <- ggsci::pal_npg("nrc")(4)
+my_col_ell <- ggsci::pal_uchicago()(3)
+ggplot(ggdata) +
+  geom_point(aes(x = PC1, y = PC2, fill = factor(Species)), alpha = 0.8, size = 3, shape = 21, colour = "grey90") +
+  geom_segment(data = var_iris, aes(x = 0, xend = Dim.1 * 2, colour = flower,
+                                    y = 0, yend = Dim.2 * 2), size = 1.2, arrow = arrow(length = unit(0.03, "npc"))) +
+  geom_text(data = var_iris, aes(x = Dim.1 * 2, colour = flower, label = measure,
+                                 y = Dim.2 * 2), nudge_x = 0.2, nudge_y = 0.3, show.legend = FALSE) +
+  scale_fill_manual(values = my_col_ell) +
+  scale_colour_manual(values = my_col_var) +
+  labs(fill = "cluster",
+       title = "PCA",
+       x = paste("PC1 (var:", round(pca_iris$eig[1, 2], 2), "%)"),
+       y = paste("PC1 (var:", round(pca_iris$eig[2, 2], 2), "%)"),
+       shape = "cluster",
+       colour = "loadings") +
+  theme_minimal(20)
+```
+
+###  {.box-6}
+
+```{r, echo = FALSE}
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "loess") +
+  theme_minimal(20) +
+  labs(title = "Regression")
+```
+
+
+
+### {.box-6}
+
+```{r, echo = FALSE, fig.height = 4.5}
+fit <- survfit(Surv(time, status) ~ sex, data = lung)
+ggsurvplot(
+  fit, 
+  data = lung, 
+  size = 1,                 # change line size
+  palette = 
+    c("#E7B800", "#2E9FDF"),# custom color palettes
+  conf.int = TRUE,          # Add confidence interval
+  pval = TRUE,              # Add p-value
+  risk.table = FALSE,        # Add risk table
+  risk.table.col = "strata",# Risk table color by groups
+  title = "Survival, Kaplan-Meier",
+  legend.labs = 
+    c("Male", "Female"),    # Change legend labels
+  risk.table.height = 0.25, # Useful to change when you have multiple groups
+  ggtheme = theme_minimal(20)      # Change ggplot2 theme
+)
+```
+
+
+
+
+
+## Project | code versioning { .center-pic .nvs1}
+
+
+```{r, echo = FALSE, out.width = "80%"}
+knitr::include_graphics(here("img/git_commit.png"))
+```
+
+<span class = "small">Modified from Maria Mele's [blog post](http://www.marinamele.com/2014/07/git-tutorial-create-a-repository-commit-git-branches-and-bitbucket.html)</span>
+
+
+## Project | collaborative work {.vs1}
+
+### branches {.box-12 .icon .bg-white}
+
+![](./img/tvcourse_branches.png)
+
+[_R_ workshop repository](https://github.com/LSRU/tv_course)
+
+- ginolhac
+- <span class = "blue">krause</span>
+- <span class = "green">koncina</span>
+
+# R
+
+## What is R? {.vs2}
+
+### {.icon .col-12}
+
+![](https://hpc.uni.lu/images/logo/logo_hpc-shool2017.png)
+
+**R** is shorthand for ["GNU R"](https://www.r-project.org):
+
+- An interactive programming language derived from **S** (**J. Chambers**, Bell Lab, 1976)
+- Appeared in 1993, created by **R. Ihaka** and **R. Gentleman**, University of Auckland
+- Focus on data analysis and plotting
+- **R** is also shorthand for the ecosystem around this language
+    + Book authors
+    + Package developers
+    + Ordinary useRs
+  
+Learning to use **R** will make you **more efficient** and **facilitate the use** of advanced data analysis tools
+
+## Why use R? {.vs2}
+
+- It's *free!*
+- easy to install / maintain
+- easy to process big files and analyse huge amounts of data
+- integrated data visualization tools, *even dynamic* via [shiny](http://shiny.rstudio.com/)
+- fast, and even faster with *C++* integration via [Rcpp](http://dirk.eddelbuettel.com/code/rcpp/Rcpp-attributes.pdf).
+- easy to get help
+    + [huge R community in the web](https://support.rstudio.com/hc/en-us/articles/200552336-Getting-Help-with-R)
+    + [stackoverflow](http://stackoverflow.com/questions/tagged/r) with a lot of tags like **r**, **tidyverse**, **dplyr**, **ggplot2** etc.
+    + [rbloggers](http://www.r-bloggers.com)
+
+
+
+
+
+
+
